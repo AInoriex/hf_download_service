@@ -4,9 +4,15 @@ load_dotenv()
 import os
 from huggingface_hub import hf_hub_download, HfApi
 from utils import obs, ufile
+from utils.logger import logger
 
+# HF仓库信息
+repo_id = "MLCommons/unsupervised_peoples_speech"
+repo_type = "dataset"
+revision = "main"
 hf_token = os.getenv("HF_TOKEN")
 assert hf_token
+logger.info(f"[Huggingface Info] repo_id:{repo_id}, repo_type:{repo_type}, revision:{revision}, hf_token:{hf_token}")
 
 # 列举hf文件
 def hf_list_files(repo_id, revision="main"):
@@ -15,6 +21,7 @@ def hf_list_files(repo_id, revision="main"):
     files = api.list_repo_files(repo_id=repo_id, revision=revision, repo_type="dataset", token=hf_token)
     # print(file_names)
     print(f"hf_list_files > 检测到{repo_id}/tree/{revision}下一共{len(files)}个文件")
+    logger.info(f"hf_list_files > 检测到{repo_id}/tree/{revision}下一共{len(files)}个文件")
     return files
 
 def hf_batch_download_concurrent(file_list:list, repo_id:str, download_file_path:str, repo_type="dataset", revision="main", batch_size=10, n_jobs=4):
@@ -38,7 +45,7 @@ def hf_batch_download_concurrent(file_list:list, repo_id:str, download_file_path
 def _hf_download_handler(file_list, repo_id, repo_type, revision, download_file_path):
     for file in file_list:
         try:
-            print(f"正在下载: {file}")
+            print(f"当前正在下载: {file} \n")
             hf_hub_download(
                 repo_id=repo_id,
                 repo_type=repo_type,
@@ -51,6 +58,8 @@ def _hf_download_handler(file_list, repo_id, repo_type, revision, download_file_
             )
         except Exception as e:
             print(f"下载失败: {file}, 错误: {e}")
+            logger.error(f"{repo_id}.{revision} -> {download_file_path}/{file}下载失败, 错误: {e}")
+            # ufile.write_string_to_file(text_string="", out_file=f"{download_index_path}/{file}.fail")
             continue
 
 def read_files_list_from_file(index_file:str)->list:
@@ -59,17 +68,16 @@ def read_files_list_from_file(index_file:str)->list:
         lines = f.readlines()
         ret_list = [line.strip() for line in lines]
     print(f"read_files_list_from_file > 一共读取到{len(ret_list)}个文件")
+    logger.info(f"read_files_list_from_file > 一共读取到{len(ret_list)}个文件")
     return ret_list
 
 if __name__ == "__main__":
+    # 初始化
     download_index_path = "./downloads/indexs"
     os.makedirs(download_index_path, exist_ok=True)
     download_file_path = "./downloads/origins"
     os.makedirs(download_file_path, exist_ok=True)
-
-    repo_id = "MLCommons/unsupervised_peoples_speech"
-    repo_type = "dataset"
-    revision = "main"
+    logger.info(f"download_index_path:{download_index_path}, download_file_path:{download_file_path}")
 
     # 所有文件列表写入downloads\indexs\unsupervised_peoples_speech.txt
     # target_files = hf_list_files(repo_id=repo_id)

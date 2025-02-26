@@ -103,7 +103,7 @@ class Logger():
         # 日志配置
         logger.remove(0)
         filename = os.path.join(log_dir, f"{log_time}.log")
-        log_level = "DEBUG" if os.getenv('DEBUG').lower()=='true' else "INFO"
+        log_level = "DEBUG" if os.getenv('DEBUG', 'false').lower()=='true' else "INFO"
         log_format = "{time:YYYY-MM-DD HH:mm:ss} | {level} | {file}:{line} | Process.{process} | {message}"
         logger.add(sys.stderr, level=log_level, format=log_format, colorize=True, backtrace=True, diagnose=True)
         logger.add(
